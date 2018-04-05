@@ -1,6 +1,6 @@
 # Quick and easy software patches you can take anywhere.
 
-I recently migrated my home storage machine from [http://www.freenas.org](FreeNAS) to a [https://www.nixos.org](NixOS) machine. The FreeNAS machine was perfectly and I would recommend it to anyone, it just lacked some flexibility on services and available software.
+I recently migrated my home storage machine from [FreeNAS](https://www.freenas.org) to a [NixOS](https://www.nixos.org) machine. The FreeNAS machine was perfectly and I would recommend it to anyone, it just lacked some flexibility on services and available software.
 
 FreeNAS has a built in client for ZFS replication and it works well. I needed to replicate that and there are several tools available, though Znapzend (I really hate typing that name ...) was already packaged and has a module. Great! This should be easy. Znapzend uses an app called mbuffer to buffer the writes from `zfs send` into memory and dumps it into `zfs receive` when it's capable of taking more data. It has an option to abort if it hasn't been able to move data for some amount of (configurable) time.
 
