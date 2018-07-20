@@ -24,7 +24,7 @@ Model: Dell J-SRX210B
 JUNOS Software Release [12.1X46-D10.2]
 ```
 
-![alt text](https://www.dropbox.com/s/fegv1jud2gyi6m7/2018-07-20%2016.40.10.jpg?dl=0 "srx picture")
+[srx picture](https://casey.hubns.net/p/clean/srx-1.jpg)
 
 ## Cisco 7960 PoE SIP Phone
 
@@ -41,8 +41,9 @@ It has an i5-2405S (4 core, 2.5ghz), 16 gigs of ram, 4x2T drives, and dual Intel
 
 It's still very capable. I needed more storage and upgraded.
 
-![alt text](https://www.dropbox.com/s/ufm5hm3awz0s2mk/2018-07-20%2017.01.12.jpg?dl=0 "freenas mini front")
+[front](https://casey.hubns.net/p/clean/nas-1.jpg)
+[back](https://casey.hubns.net/p/clean/nas-2.jpg)
 
-![alt text](https://www.dropbox.com/s/v2moj60vg69658k/2018-07-20%2017.01.33.jpg?dl=0 "freenas mini back")
+
 
 
