@@ -58,11 +58,12 @@ It's a storage box with firewire, usb, and ethernet (ethernet is iSCSI only, no 
 [back](https://casey.hubns.net/p/clean/drobo-1.jpg)
 
 
-~~## Gigabyte GA-Z77X-UP5-TH motherboard, i7-3770k, 32g corsair memory~~
+<del>## Gigabyte GA-Z77X-UP5-TH motherboard, i7-3770k, 32g corsair memory
 
 tentatively sold.
 
 This served as my linux box for a long while. It has a corsair h60 liquid cpu cooler as well. Just add power supply + case and off you go.
 
 [guts](https://casey.hubns.net/p/clean/mobo-1.jpg)
+</del>
 
