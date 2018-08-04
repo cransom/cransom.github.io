@@ -26,23 +26,12 @@ JUNOS Software Release [12.1X46-D10.2]
 
 [srx](https://casey.hubns.net/p/clean/srx-1.jpg)
 
-## Cisco 7960 PoE SIP Phone
-
-Like new condition. I used it in my Asterisk set up long ago. Uses normal PoE, includes a separate power injector.
-
-[c7960](https://casey.hubns.net/p/clean/7960.jpg)
-
-
-## Polycom Soundpoint IP 501 SIP Phone
-
-This isn't normal 802.3af, but I have the power injector for it.
-
-[polycom](https://casey.hubns.net/p/clean/polycom.jpg)
-
 
 ## FreeNAS Mini Chassis
 
 It has an i5-2405S (4 core, 2.5ghz), 16 gigs of ram, 4x2T drives, and dual Intel GigE card (copper ports) in addition to the port built in.
+
+Drives are Seagate Baracuda Greens, ~3 years of use, purchased in 2013.
 
 It's still very capable as any combination of linux (or bsd!) router/storage.
 
