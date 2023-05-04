@@ -22,13 +22,15 @@
             layers = [ ./. ];
             layersString = [ "." ];
             # port = 8080;
-            baseUrl = "/emanote-template/"; # Change to "/" (or remove it entirely) if using CNAME
+            #baseUrl = "/emanote-template/"; # Change to "/" (or remove it entirely) if using CNAME
             # prettyUrls = true;
           };
         };
         devShells.default = pkgs.mkShell {
           buildInputs = [
             pkgs.nixpkgs-fmt
+            pkgs.proselint
+            (pkgs.aspellWithDicts (dicts: with dicts; [ en ]))
           ];
         };
         formatter = pkgs.nixpkgs-fmt;

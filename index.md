@@ -1,7 +1,16 @@
-# Emanote Template
+# Lazeministrator's tool kit
 
-This is a Git template repository of Markdown notes that are automatically rendered using [Emanote] and hosted on [[GitHub Pages]], while enabling editing in the likes of [Visual Studio Code](https://emanote.srid.ca/start/resources/editors/vscode). For details, see https://github.com/srid/emanote-template.
+<h2 style="text-align: center;">My struggle to be as lazy as possible.</h2>
 
-Any `.md` file (eg: [[GitHub Pages]]) or directory of `.md` files (eg: [[Tutorials]]) you add to the repository will be rendered automatically. For information on all features Emanote supports, see https://emanote.srid.ca/
+##
 
-[Emanote]: https://emanote.srid.ca/
+
+Not lazy in the way you are probably thinking. I'm taking it back. I mean lazy in the sense where you do as much work as
+needed in order to not have to do *more* work in the future. It's a delicate balance and even has at least one
+[XKCD comic](https://xkcd.com/1205/) about it. It's a zen where you work on a task, thinking about all of the ways
+in the future that it might blow up on you and you take the extra steps to not have that future failure.
+
+It can take a lot of work to be productively lazy. Check [[about|here]] if you want to learn more about my super hero
+origins.
+
+Check out the [[blog|blogs]] to learn more about the sharp knives in my tool box.
