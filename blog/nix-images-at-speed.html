@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1' />
+  <title>
+    deploying disk images at speed – casey notes
+  </title>
+  
+    
+      <meta property='og:description' content='When I started at a modestly sized, AWS hosted web property several years back, I inherited an environment that was built on Chef. Chef had served the company well enough. It crossed off all the check boxes that the marketing literature specified like being able to configure your Ubuntu host with some ruby code and you can provision hosts without touching them.' />
+      <meta property='og:site_name' content='casey notes' />
+      <meta property='og:image' content />
+      <meta property='og:type' content='website' />
+      <meta property='og:title' content='deploying disk images at speed' />
+    
+    
+      <base href='/' />
+      <link href='favicon.svg' rel='icon' />
+    
+    <meta name='generator' content='Emanote' />
+
+  
+  <link href='tailwind.css?instanceId=de147d9b-02ee-4654-97f0-42d38b0d060e' rel='stylesheet' type='text/css' />
+
+  <style>
+    /* Heist error element */
+    strong.error {
+      color: lightcoral;
+      font-size: 90%;
+      font-family: monospace;
+    }
+
+    /* External link icon */
+    a[data-linkicon=""]::after {
+      content: ""
+    }
+
+    a[data-linkicon=none]::after {
+      content: ""
+    }
+
+    a[data-linkicon="external"]::after {
+      content: url('data:image/svg+xml,\
+      <svg xmlns="http://www.w3.org/2000/svg" height="0.7em" viewBox="0 0 20 20"> \
+        <g style="stroke:gray;stroke-width:1"> \
+          <line x1="5" y1="5" x2="5" y2="14" /> \
+          <line x1="14" y1="9" x2="14" y2="14" /> \
+          <line x1="5" y1="14" x2="14" y2="14" /> \
+          <line x1="5" y1="5" x2="9" y2="5"  /> \
+          <line x1="10" y1="2" x2="17" y2="2"  /> \
+          <line x1="17" y1="2" x2="17" y2="9" /> \
+          <line x1="10" y1="9" x2="17" y2="2" style="stroke-width:1.0" /> \
+        </g> \
+      </svg>');
+    }
+
+    a[data-linkicon="external"][href^="mailto:"]::after {
+      content: url('data:image/svg+xml,\
+        <svg \
+          xmlns="http://www.w3.org/2000/svg" \
+          height="0.7em" \
+          fill="none" \
+          viewBox="0 0 24 24" \
+          stroke="gray" \
+          stroke-width="2"> \
+          <path \
+            stroke-linecap="round" \
+            stroke-linejoin="round" \
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /> \
+        </svg>');
+    }
+  </style>
+  <!-- What goes in this file will appear on near the end of <head>--><link rel='preload' href='_emanote-static/fonts/Work_Sans/WorkSans-VariableFont_wght.ttf' as='font' type='font/ttf' crossorigin />
+
+<style>
+  @font-face {
+    font-family: 'WorkSans';
+    /* FIXME: This ought to be: ${ema:emanoteStaticLayerUrl}/fonts/Work_Sans/WorkSans-VariableFont_wght.ttf */
+    src: url(_emanote-static/fonts/Work_Sans/WorkSans-VariableFont_wght.ttf) format("truetype");
+    font-display: swap;
+  }
+
+  body {
+    font-family: 'WorkSans', sans-serif;
+    font-variation-settings: 'wght' 350;
+  }
+
+  a.mavenLinkBold {
+    font-variation-settings: 'wght' 400;
+  }
+
+  strong {
+    font-variation-settings: 'wght' 500;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  header,
+  .header-font {
+    font-family: 'WorkSans', sans-serif;
+  }
+
+  h1 {
+    font-variation-settings: 'wght' 500;
+  }
+
+  h2 {
+    font-variation-settings: 'wght' 400;
+  }
+
+  h3 {
+    font-variation-settings: 'wght' 300;
+  }
+</style>
+
+
+  
+  <link rel='stylesheet' href='_emanote-static/stork/flat.css' />
+<!-- Custom Stork-search styling for Emanote -->
+<style>
+  #stork-search-container {
+    z-index: 1000;
+    background-color: rgb(15 23 42/.8);
+  }
+
+  .stork-overflow-hidden-important {
+    overflow: hidden !important;
+  }
+</style>
+
+
+<script src='_emanote-static/stork/stork.js'></script>
+
+  
+    <script id='emanote-stork' data-emanote-base-url='/'>
+      window.emanote = {};
+      window.emanote.stork = {
+        searchShown: false,
+        indexIsStale: false,
+        toggleSearch: function () {
+          window.emanote.stork.refreshIndex();
+          document.getElementById('stork-search-container').classList.toggle('hidden');
+          window.emanote.stork.searchShown = document.body.classList.toggle('stork-overflow-hidden-important');
+          if (window.emanote.stork.searchShown) {
+            document.getElementById('stork-search-input').focus();
+          }
+        },
+        clearSearch: function () {
+          document.getElementById('stork-search-container').classList.add('hidden');
+          document.body.classList.remove('stork-overflow-hidden-important');
+          window.emanote.stork.searchShown = false;
+        },
+
+        getBaseUrl: function () {
+          const baseUrl = document.getElementById("emanote-stork").getAttribute('data-emanote-base-url') || '/';
+          return baseUrl;
+        },
+
+        registerIndex: function (options) {
+          const indexName = 'emanote-search'; // used to match input[data-stork] attribute value
+          const indexUrl = window.emanote.stork.getBaseUrl() + '-/stork.st';
+          stork.register(
+            indexName,
+            indexUrl,
+            options);
+        },
+
+        init: function () {
+          if (document.readyState !== 'complete') {
+            window.addEventListener('load', function () {
+              stork.initialize(window.emanote.stork.getBaseUrl() + '_emanote-static/stork/stork.wasm');
+              window.emanote.stork.registerIndex();
+            });
+
+            document.addEventListener('keydown', event => {
+              if (window.emanote.stork.searchShown && event.key === 'Escape') {
+                window.emanote.stork.clearSearch();
+                event.preventDefault();
+              } else if ((event.key == 'k' || event.key == 'K') && (event.ctrlKey || event.metaKey)) {
+                window.emanote.stork.toggleSearch();
+                event.preventDefault();
+              }
+            });
+          } else {
+            // This section is called during Ema's hot reload.
+            // 
+            // Mark the current index as stale, and refresh it *only when* the
+            // user actually invokes search.
+            // 
+            // We do not refresh the index *right away*, as that will cause
+            // memory leaks in the browser. See
+            // https://github.com/srid/emanote/issues/411#issuecomment-1402056235
+            console.log("stork: Marking index as stale");
+            window.emanote.stork.markIndexAsStale();
+          }
+        },
+
+        markIndexAsStale: function () {
+          window.emanote.stork.indexIsStale = true;
+        },
+
+        refreshIndex: function () {
+          if (window.emanote.stork.indexIsStale) {
+            console.log("stork: Reloading index");
+            window.emanote.stork.indexIsStale = false;
+            // NOTE: This will leak memory. See the comment above.
+            window.emanote.stork.registerIndex({ forceOverwrite: true });
+          }
+        }
+
+      };
+
+      window.emanote.stork.init();
+    </script>
+  
+
+</head>
+
+<!-- DoNotFormat -->
+
+
+
+<!-- DoNotFormat -->
+
+<body class='bg-gray-400 overflow-y-scroll'>
+  
+    <div class='container mx-auto'>
+
+      <nav id='breadcrumbs' class='w-full text-gray-700 md:hidden'>
+  <div class='flex justify-left'>
+    <div class='w-full px-2 py-2 bg-gray-50'>
+      <ul class='flex flex-wrap text-lg'>
+        <li class='inline-flex items-center'>
+          
+            
+              <img style='width: 1rem;' src='favicon.svg' />
+            
+          
+        </li>
+        
+          
+            <li class='inline-flex items-center'>
+              <a class='px-1 font-bold' href=''>
+                Lazeministrator’s tool kit
+              </a>
+              <svg fill='currentColor' viewBox='0 0 20 20' class='w-auto h-5 text-gray-400'>
+                <path fill-rule='evenodd' d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z' clip-rule='evenodd'></path>
+              </svg>
+            </li>
+          
+            <li class='inline-flex items-center'>
+              <a class='px-1 font-bold' href='blog.html'>
+                rants and raves.
+              </a>
+              <svg fill='currentColor' viewBox='0 0 20 20' class='w-auto h-5 text-gray-400'>
+                <path fill-rule='evenodd' d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z' clip-rule='evenodd'></path>
+              </svg>
+            </li>
+          
+        
+      </ul>
+    </div>
+    <button class='inline px-2 py-1 bg-gray-50 outline-none cursor-pointer focus:outline-none' title='Search (Ctrl+K)' type='button' onclick='window.emanote.stork.toggleSearch()'>
+      <svg xmlns='http://www.w3.org/2000/svg' style='width: 1rem;' class='hover:text-red-700' f
+ fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'>
+  <path stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+</svg>
+    </button>
+    <button class='inline px-2 py-1 text-white bg-red-600 outline-none cursor-pointer focus:outline-none' title='Toggle sidebar' type='button' onclick="toggleHidden('sidebar')">
+      <svg xmlns='http://www.w3.org/2000/svg' class='w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'></path>
+      </svg>
+    </button>
+    <script>
+      function toggleHidden(elemId) {
+        document.getElementById(elemId).classList.toggle("hidden");
+      }
+    </script>
+  </div>
+</nav>
+
+      <div id='container' class='flex flex-nowrap flex-col md:flex-row bg-gray-50 md:mt-8 md:shadow-2xl md:mb-8'>
+        <!-- Sidebar column -->
+        <nav id='sidebar' class='flex-shrink hidden leading-relaxed md:block md:sticky md:top-0 md:h-full md:w-48 xl:w-64'>
+          <div class='px-2 py-2 text-gray-800'>
+            <div id='indexing-links' class='flex flex-row float-right p-2 space-x-2 text-gray-500'>
+              <a href='-/tags.html' title='View tags'>
+                <svg style='width: 1rem;' class='hover:text-red-700' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                  <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'>
+                  </path>
+                </svg>
+              </a>
+              <a href='-/all.html' title='Expand full tree'>
+                <svg style='width: 1rem;' class='hover:text-red-700' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+                  <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4'>
+                  </path>
+                </svg>
+              </a>
+              <a title='Search (Ctrl+K)' class='cursor-pointer' onclick='window.emanote.stork.toggleSearch()'>
+                <svg xmlns='http://www.w3.org/2000/svg' style='width: 1rem;' class='hover:text-red-700' f
+ fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'>
+  <path stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+</svg>
+              </a>
+            </div>
+
+            <div id='site-logo' class='pl-2'>
+              <div class='flex items-center my-2 space-x-2 justify-left'>
+                <a href='' title='Go to Home'>
+                  
+                    
+                      <!-- The style width attribute here is to prevent huge
+                      icon from displaying at those rare occasions when Tailwind
+                      hasn't kicked in immediately on page load 
+                      -->
+                      <img style='width: 1rem;' class='transition transform hover:scale-110 hover:opacity-80' src='favicon.svg' />
+                    
+                  
+                </a>
+                <a class='font-bold truncate' title='Go to Home' href=''>
+                  Home
+                </a>
+              </div>
+            </div>
+
+            
+              <!-- Variable bindings for this tree-->
+  
+    
+      
+    
+    
+
+
+
+  
+
+
+<!-- Rendering of this tree -->
+<div class='pl-2'>
+  <!-- Node's rootLabel-->
+  <div class='flex items-center my-2 space-x-2 justify-left'>
+    
+    
+      <svg class='w-4 h-4 flex-shrink-0 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'>
+        </path>
+      </svg>
+    
+  
+    <a class='hover:underline truncate' title='About' href='about.html'>
+      About
+    </a>
+    
+      
+  </div>
+
+  <!-- Node's children forest, displayed only on active trees
+    TODO: Use <details> to toggle visibility?
+  -->
+  
+    
+  
+</div>
+            
+              <!-- Variable bindings for this tree-->
+  
+    
+      
+      
+    
+
+
+
+  
+  
+
+<!-- Rendering of this tree -->
+<div class='pl-2'>
+  <!-- Node's rootLabel-->
+  <div class='flex items-center my-2 space-x-2 justify-left'>
+    
+    
+      <svg xmlns='http://www.w3.org/2000/svg' class='w-4 h-4 flex-shrink-0 inline text-gray-700' viewBox='0 0 20 20' fill='currentColor'>
+        <path fill-rule='evenodd' d='M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z' clip-rule='evenodd'></path>
+        <path d='M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z'></path>
+      </svg>
+      
+  
+    <a class='font-bold hover:underline truncate' title='rants and raves.' href='blog.html'>
+      rants and raves.
+    </a>
+    
+      
+  </div>
+
+  <!-- Node's children forest, displayed only on active trees
+    TODO: Use <details> to toggle visibility?
+  -->
+  
+    
+      <!-- Variable bindings for this tree-->
+  
+  
+
+
+  
+
+
+<!-- Rendering of this tree -->
+<div class='pl-2'>
+  <!-- Node's rootLabel-->
+  <div class='flex items-center my-2 space-x-2 justify-left'>
+    
+    
+      <svg class='w-4 h-4 flex-shrink-0 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'>
+        </path>
+      </svg>
+      
+  
+    <a class='font-bold text-red-600 hover:underline truncate' title='deploying disk images at speed' href='blog/nix-images-at-speed.html'>
+      deploying disk images at speed
+    </a>
+    
+      
+  </div>
+
+  <!-- Node's children forest, displayed only on active trees
+    TODO: Use <details> to toggle visibility?
+  -->
+  
+    
+  
+</div>
+    
+      <!-- Variable bindings for this tree-->
+  
+    
+      
+    
+    
+
+
+
+  
+
+
+<!-- Rendering of this tree -->
+<div class='pl-2'>
+  <!-- Node's rootLabel-->
+  <div class='flex items-center my-2 space-x-2 justify-left'>
+    
+    
+      <svg class='w-4 h-4 flex-shrink-0 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'>
+        </path>
+      </svg>
+    
+  
+    <a class='hover:underline truncate' title='Turning patches into configuration' href='blog/patches-into-configuration.html'>
+      Turning patches into configuration
+    </a>
+    
+      
+  </div>
+
+  <!-- Node's children forest, displayed only on active trees
+    TODO: Use <details> to toggle visibility?
+  -->
+  
+    
+  
+</div>
+    
+      <!-- Variable bindings for this tree-->
+  
+    
+      
+    
+    
+
+
+
+  
+
+
+<!-- Rendering of this tree -->
+<div class='pl-2'>
+  <!-- Node's rootLabel-->
+  <div class='flex items-center my-2 space-x-2 justify-left'>
+    
+    
+      <svg class='w-4 h-4 flex-shrink-0 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'>
+        </path>
+      </svg>
+    
+  
+    <a class='hover:underline truncate' title='Nix makes Linux usable' href='blog/why-nix.html'>
+      Nix makes Linux usable
+    </a>
+    
+      
+  </div>
+
+  <!-- Node's children forest, displayed only on active trees
+    TODO: Use <details> to toggle visibility?
+  -->
+  
+    
+  
+</div>
+    
+  
+</div>
+            
+
+          </div>
+        </nav>
+
+        <!-- Main body column -->
+        <div class='flex-1 w-full overflow-x-auto bg-white'>
+          <main class='px-4 py-4'>
+            <h1 class='flex items-end justify-center mb-4 p-3 bg-red-100 text-5xl font-extrabold text-black rounded'>
+  <a class='z-40 tracking-tighter '>
+    deploying disk images at speed
+  </a>
+</h1>
+            <article class='overflow-auto'>
+  <!-- What goes in this file will appear on top of note body-->
+  <h2 id='background' class='inline-block mt-6 mb-4 text-4xl font-bold text-gray-700 border-b-2'>background</h2>
+    <p class='mb-3'>
+      When I started at a modestly sized, AWS hosted web property several years back, I inherited an environment that was built on Chef. Chef had served the company well enough. It crossed off all the check boxes that the marketing literature specified like being able to configure your Ubuntu host with some ruby code and you can provision hosts without touching them.
+    </p>
+  
+    <p class='mb-3'>
+      As I learned more about the environment and worked with it a bit, I started seeing it’s flaws. Or rather, it started screaming about it’s flaws via the pager a few mornings every month. Regularly, the auto-scaling monitor would report that it added a machine but after 15 minutes it was still not healthy. The monitor had to wait that long because the auto-scaling-group (ASG) was tuned quite conservatively. The regular process to bring up a new into service took about 10 minutes so it gave a good bit of run way to soak up spikes while it provisioned more resources. This wasn’t great for timely alerts.
+    </p>
+  
+    <p class='mb-3'>
+      I’m not a Chef specialist and this was several years ago, but it wasn’t a particularly exotic arrangement. The disk image (AMI) was built with packer and it used cloud-init to pull in some variables about it’s environment (production or which staging). Then it reached out to GitHub to pull down the repository to have Chef bring the system and application code up to the desired state. This process relied on external resources including an apt repository to enable Datadog
+    <sup class='px-0.5'>
+      <a class='text-red-600 hover:underline' href='blog/nix-images-at-speed.html#fn1'>
+        1
+      </a>
+    </sup>
+  . One time, that repository was just broken. The most memorable outage was a combination of events where new nodes were added that never became healthy but then the load subsided and the scale-in mechanism reaped the good nodes, causing a full site melt down because of no healthy instances. It was a bad day.
+    </p>
+  <h2 id='how-to-improve' class='inline-block mt-6 mb-4 text-4xl font-bold text-gray-700 border-b-2'>how to improve</h2>
+    <p class='mb-3'>
+      This isn’t really a Chef problem and people with better Chef smarts than we had could have probably addressed many of the flaws. We zoomed out to get a larger picture to see what our real problems were.
+    </p>
+  <h3 id='external-dependencies' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>external dependencies</h3>
+    <p class='mb-3'>
+      External dependencies when trying to bring up fleets of hosts, multiple times a day, that you cannot control can cause chaos. We had a smattering of other failures as well like having GitHub go down would prohibit scaling. Luckily, that didn’t happen when it could have hurt us the most, but that happens.
+    </p>
+  <h3 id='long-time-to-provision' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>long time to provision</h3>
+    <p class='mb-3'>
+      The bursts that we received were often from web crawlers that would index older bits of the site that were not in cache. There were earlier efforts via <code class='py-0.5 px-0.5 bg-gray-100'>robots.txt</code> and page metadata to try and minimize it but not everyone plays by the rules. I came up with some helpful throttling modifiers for our <a href='https://varnish-cache.org/' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>Varnish</a> caching layer that also helped significantly. 2016-2020 was also huge in terms of our traffic because of some newsworthy event that happened that day and sometimes, you just had to scale quickly and sustain it.
+    </p>
+  <h3 id='use-the-tools-we-have' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>use the tools we have</h3>
+    <p class='mb-3'>
+      AWS has so many features but you don’t need them all. Auto scaling groups, elastic load balancers, RDS, and DNS could deliver a significant chunk of the web apps you might encounter on a daily basis. One thing we didn’t want to do is become dependent on containers. It was a volatile time in the container space with Kubernetes coming around and Docker releasing a product just to re-write it and re-release something else 6 months later.
+    </p>
+  <h2 id='bold-choices-made' class='inline-block mt-6 mb-4 text-4xl font-bold text-gray-700 border-b-2'>bold choices made</h2>
+    <p class='mb-3'>
+      The developer environments (macOS laptops mostly) and repos had been slowly but steadily converted from using a Homebrew with manual setup steps over to <a href='https://nixos.org' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>Nix</a> in order to cut down the time it took to onboard devs and make our environments repeatable. We were able to convert much of the documentation for on-boarding from running random brew commands to ‘install nix, follow ssh setup, clone this repository and run the script, done’ and you could be ready to go in an afternoon. Nix was able to ensure all of the ruby (rails!) was setup and we had lock-step parity between dev and our <a href='https://github.com/NixOS/hydra' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>build system</a>.
+    </p>
+  
+    <p class='mb-3'>
+      Nix builds software. A disk image with an operating system is just a special format for holding way more software, right? Applying Nix to the whole machine yields NixOS. Could we take the principles from building a rails project and incorporate them into a fast provisioning and resilient disk image?
+    </p>
+  
+    <p class='mb-3'>
+      Well, we did and you could too.
+    </p>
+  <h3 id='step-1-make-an-image' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>step 1. make an image</h3>
+    <p class='mb-3'>
+      We wanted to keep the list of external dependencies to a minimum. Granted, we are running on AWS so we assume some things are always going to work because if they don’t, AWS is on fire anyway. The only external call that the machine makes on boot is to the EC2 Metadata service, in order to get it’s credentials to unlock secrets that are sealed via AWS Key Management Service (KMS). If you’d like an easy solution for secrets, I recommend <a href='https://github.com/mozilla/sops' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>sops</a>.
+    </p>
+  
+    <p class='mb-3'>
+      This means that every other bit of software and configuration needed to be packed into the disk image. This was straight forward other than secrets and we needed to deal with those. We took the opportunity to improve that as well because the previous Chef systems were shipped with the decryption key which made secrets pointless.
+    </p>
+  
+    <p class='mb-3'>
+      I’m only going to briefly mention that NixOS exists because anything deeper would require volumes of novels. Let me know if you are interested in a deeper run through of the process. Once you have your software bundled up into <code class='py-0.5 px-0.5 bg-gray-100'>configuration.nix</code>, make sure you include the following to ensure the build command will work:
+    </p>
+  <div class='py-0.5 mb-3 text-sm'><pre><code class='language-none'>nix imports = [ &lt;nixpkgs/nixos/maintainers/scripts/ec2/amazon-image.nix&gt; ];</code></pre></div>
+    <p class='mb-3'>
+      Then, you are set to build.
+    </p>
+  <div class='py-0.5 mb-3 text-sm'><pre><code class='language-none'>$ NIXOS_CONFIG=$PWD/mywebserver.nix nix-build '&lt;nixpkgs/nixos&gt;' -A config.system.build.amazonImage &lt;build build build output&gt;
+/nix/store/v2pa00hpc5xjsqg23p3ms7s4fgg2lrsh-nixos-amazon-image-23.05pre-git-x86_64-linux
+$ ls
+/nix/store/v2pa00hpc5xjsqg23p3ms7s4fgg2lrsh-nixos-amazon-image-23.05pre-git-x86_64-linux
+nixos-amazon-image-23.05pre-git-x86_64-linux.vhd  nix-support/</code></pre></div>
+    <p class='mb-3'>
+      The speed of this depends on how big your image is and how fast your builder is. If it’s part of a CI system and you are building regularly, much of it should already be in the nix store and cached.
+    </p>
+  
+    <p class='mb-3'>
+      Done. Now let’s get it into AWS.
+    </p>
+  <h3 id='step-2-image-upload' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>step 2. image upload</h3>
+    <p class='mb-3'>
+      Beware the AWS Snapshot importer service. We started with it because it was the only option available. It is a lengthy and variable process where you would upload an image to S3 and then call on the AWS snapshot importer service to turn it into a snapshot. From there, you could then register an AMI from that snapshot. On a good day, this was between a 2-7 minute process. On the bad ones, it was 45 minutes. The times didn’t depend on image sizes because we could make big ones or small ones and it was the same. It varied between regions but typically us-east-2 was a little quicker than us-west-2. Sometimes. The hardest part was the variability and we couldn’t know when speeds would pick back up. On the good side, nothing was broken while this happened, it was just stopping new code from going out.
+    </p>
+  
+    <p class='mb-3'>
+      It is broken enough that I won’t even mention it further here because there’s a better way.
+    </p>
+  
+    <p class='mb-3'>
+      The new hotness came around when Amazon announced an API service that you could talk to EBS snapshots directly. This allowed 3rd parties to quickly read and write from disks allowing interesting tools like backups to work. They also provided <a href='https://github.com/awslabs/coldsnap' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>coldsnap</a>, a command line tool to interact with this service without using the low level API.
+    </p>
+  
+    <p class='mb-3'>
+      This replaces our ~120 lines of bash script to register a disk image and boils it down 2, though you should do so more error checking here just in case.
+    </p>
+  <div class='py-0.5 mb-3 text-sm'><pre><code class='language-none'>$ snapshot_id=$(coldsnap --region $region  upload --description "$host-$(date)" --wait
+/nix/store/v2pa00hpc5xjsqg23p3ms7s4fgg2lrsh-nixos-amazon-image-23.05pre-git-x86_64-linux/nixos-amazon-image-23.05pre-git-x86_64-linux.vhd)
+aws ec2 register-image --output text --region $region --name  "$host-$(date +%s)" --description
+"$host ami on $(date)" --architecture x86_64 --ena-support --sriov-net-support simple
+--virtualization-type hvm  --tpm-support v2.0 --root-device-name /dev/sda1 --block-device-mappings
+"[ { \"DeviceName\": \"/dev/sda1\", \"Ebs\": { \"SnapshotId\": \"$snapshot_id\" } } ]"</code></pre></div>
+    <p class='mb-3'>
+      This happens at up to 500 megabytes per second if your network connection can handle it. If you are doing this from a local machine, probably ~30 seconds of your time. You’d want to add some more checks into that and tag your AMI so you know what it is and when you could reclaim it, but, there it is.
+    </p>
+  <h3 id='step-3-deploy-and-profit' class='mt-6 mb-2 text-3xl font-bold text-gray-700'>step 3. deploy and profit?</h3>
+    <p class='mb-3'>
+      There is this app code sitting in a disk image, now it needs to run somewhere. This is going to vary based on how your app needs to behave but at the least, you’ll stick your AMI in a LaunchTemplate. Do you need blue/green deployment? Do you need a canary test? There’s <a href='https://developer.hashicorp.com/terraform/tutorials/aws/blue-green-canary-tests-deployments' class='text-red-600 hover:underline' data-linkicon='external' target='_blank' rel='noopener'>several examples for Terraform</a> that walk you through typical options.
+    </p>
+  
+    <p class='mb-3'>
+      We didn’t choose Terraform to do the ASG juggling due to fairly distant, but painfully memorable, trauma with Terraform. Instead, we opted to write our own ruby script (it was a ruby shop) to work with the load balancers and target groups. The script had custom logic for automatic rollback and alerting in case these new machines didn’t pass health checks because bad code can some times make it this far. In case of unhandled errors, it always failed in a safe manner and while it was in play, had never triggered any customer facing outages.
+    </p>
+  
+    <p class='mb-3'>
+      Rollbacks are something that I had mentioned earlier but they became a killer feature for certain. Because all of these new app instances were ephemeral (all cattle here, no pets.), and they were quick to spin up and down, code rollbacks were done in ~30 seconds. The Chef and Capistrano runs, which, may or may not have been able to rollback successfully based on the accumulated, shared, mutable state, took significantly longer.
+    </p>
+  <h2 id='result' class='inline-block mt-6 mb-4 text-4xl font-bold text-gray-700 border-b-2'>result</h2>
+    <p class='mb-3'>
+      In the end, we came up with a “cattle-first” solution that was both more reliable and faster than our previous mechanism. Around 12 minutes after a developer’s commit had landed, the code would be live. Keep in mind that this was still using some old methods and with some tweaks, this time could be cut in half. This was more than adequate for our deployment frequency which usually was around 2-6 times per day.
+    </p>
+  
+    <p class='mb-3'>
+      Our deployments were now fully baked and had a single dependency on KMS to unseal secrets. No failure of an external service (s3, software repos, container registries) would keep our machines from booting and serving requests.
+    </p>
+  
+    <p class='mb-3'>
+      Since the machines had to do no work other than to start up a rails server, the total time to bring up a new server was around 45 seconds. Around 15 of that was spent in the kernel and booting. We could now tune our scaling algorithms to be more efficient. Rather than averaging 30% CPU utilization, we could now bring them closer to 50%. I tinkered with higher utilization than that but rails response time started taking a hit.
+    </p>
+  
+    <p class='mb-3'>
+      Since spin up times were now less than 2 minutes, we were more confident in running servers on spot instances which was a significant savings as well.
+    </p>
+  
+    <div title='Footnotes' class='pt-2 mt-8 space-y-1 text-gray-500 transform scale-x-90 border-t-2'>
+      <header class='font-semibold'>Footnotes</header>
+      
+        <div id='fn1'>
+          <header class='italic'>
+            1.
+          </header>
+          <div class='inline-block mb-2 ml-4'>
+            I really liked Datadog for it’s dashboarding and fault analysis. It was missing some things, but we generally got along well.
+          </div>
+        </div>
+      
+    </div>
+  
+
+  <!-- What goes in this file will appear below the note body-->
+</article>
+            <div class='flex flex-col lg:flex-row lg:space-x-2'>
+              
+              
+            </div>
+            
+  <section class='flex flex-wrap items-end justify-center my-4 space-x-2 space-y-2 font-mono text-sm'>
+    
+  </section>
+
+            <!-- What goes in this file will at the very end of the main div -->
+          </main>
+        </div>
+      </div>
+      <footer class='flex items-center justify-center mt-2 mb-8 space-x-4 text-center text-gray-800'>
+  
+  <div>
+    <a href='' title='Go to Home page'>
+      <svg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6 hover:text-red-700' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'></path>
+      </svg>
+    </a>
+  </div>
+  <div>
+    <a href='-/all.html' title='View Index'>
+      <svg class='w-6 h-6 hover:text-red-700' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4'>
+        </path>
+      </svg>
+    </a>
+  </div>
+  <div>
+    <a href='https://emanote.srid.ca' target='_blank' title='Generated by Emanote 1.0.3.5'>
+      <img class='w-6 h-6 hover:text-red-700' src='_emanote-static/emanote-logo.svg' />
+    </a>
+  </div>
+  <div>
+    <a href='-/tags.html' title='View tags'>
+      <svg class='w-6 h-6 hover:text-red-700' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'>
+        </path>
+      </svg>
+    </a>
+  </div>
+  <div>
+    <a href='-/tasks.html' title='View tasks'>
+      <svg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6 hover:text-red-700' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+        <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+      </svg>
+    </a>
+  </div>
+</footer>
+    </div>
+  
+  <div id='stork-search-container' class='hidden fixed w-screen h-screen inset-0 backdrop-filter backdrop-blur-sm'>
+  <div class='fixed w-screen h-screen inset-0' onclick='window.emanote.stork.toggleSearch()'></div>
+
+  <div class='container mx-auto p-10 mt-10'>
+    <div class='stork-wrapper-flat container mx-auto'>
+      <input id='stork-search-input' data-stork='emanote-search' class='stork-input' placeholder='Search (Ctrl+K) ...' />
+      <div data-stork='emanote-search-output' class='stork-output'></div>
+    </div>
+  </div>
+</div>
+  
+    
+  
+</body>
+
+</html>
